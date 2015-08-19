@@ -18,14 +18,14 @@
 #define WRITE_BUFFER 1
 #define READ_BUFFER 2
 
-SWD swd(p25,p24,p23); // SWDIO,SWCLK,nRESET
-//SWD swd(P0_5,P0_4,P0_21); // SWDIO,SWCLK,nRESET
+//SWD swd(p25,p24,p23); // SWDIO,SWCLK,nRESET
+SWD swd(P0_5,P0_4,P0_21); // SWDIO,SWCLK,nRESET
 DigitalOut connected(P0_20);
-DigitalOut running(P0_21);
+DigitalOut running(P0_2);
 
-//SPI spi(P0_9,P0_8,P0_10); // mosi, miso, sclk
-//ATD45DB161D memory(spi, P0_7);
-//Serial ble(P0_19,P0_18);
+SPI spi(P0_9,P0_8,P0_10); // mosi, miso, sclk
+ATD45DB161D memory(spi, P0_7);
+Serial ble(P0_19,P0_18);
 
 #define     SOURCE_FILE         "/local/loader.bin"
 #define     TARGET_FILE         "/local/target.bin"
@@ -83,7 +83,7 @@ int main()
         char filename[32];
         /*
         fp = fopen( SOURCE_FILE, "rb" )
-        if ( fp) {
+        if (fp) {
             filesize=file_size(fp);
             pc.printf("0x%04X\n\r",filesize);
         }
@@ -107,11 +107,11 @@ int main()
         USBStorage2* _usb = usb_local->getUsb();
         USB_HID* _hid = _usb->getHID();
         HID_REPORT recv_report;
-        if( _hid->readNB(&recv_report) ) {
+        if( _usb->readNB(&recv_report) ) {
             HID_REPORT send_report;
             dap->Command(recv_report.data, send_report.data);
             send_report.length = 64;
-            _hid->send(&send_report);
+            _usb->send(&send_report);
         }
         wait_ms(100*5);
     }
