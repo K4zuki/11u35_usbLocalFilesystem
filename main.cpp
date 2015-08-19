@@ -3,6 +3,7 @@
 #include "USBDAP.h"
 #include "BaseDAP.h"
 #include "USB_HID.h"
+#include "DA14580.h"
 
 #include "at45db161d.h"
 
@@ -18,6 +19,9 @@
 #define WRITE_BUFFER 1
 #define READ_BUFFER 2
 
+#define     LOADER_FILE         "/local/loader.bin"
+#define     TARGET_FILE         "/local/target.bin"
+
 //SWD swd(p25,p24,p23); // SWDIO,SWCLK,nRESET
 SWD swd(P0_5,P0_4,P0_21); // SWDIO,SWCLK,nRESET
 DigitalOut connected(P0_20);
@@ -25,23 +29,12 @@ DigitalOut running(P0_2);
 
 SPI spi(P0_9,P0_8,P0_10); // mosi, miso, sclk
 ATD45DB161D memory(spi, P0_7);
-Serial ble(P0_19,P0_18);
+RawSerial ble(P0_19,P0_18);
+DA14580 BLE(ble, P0_1);
 
-#define     SOURCE_FILE         "/local/loader.bin"
-#define     TARGET_FILE         "/local/target.bin"
 int file_size( FILE *fp );
 void flash_write (int addr, char *buf, int len);
 void flash_read (int addr, char *buf, int len);
-
-enum XMODEM_CONST {
-    SOH = (0x01),
-    STX = (0x02),
-    EOT = (0x04),
-    ACK = (0x06),
-    DLE = (0x10),
-    NAK = (0x15),
-    CAN = (0x18),
-};
 
 class myDAP : public BaseDAP
 {
@@ -77,10 +70,14 @@ int main()
 //    int crc=0x00;
 
 
+    int result=0;
     while(1) {
         usb_local->lock(true);
         usb_local->remount();
         char filename[32];
+
+        result = BLE.load();
+        usb_local->putc(result);
         /*
         fp = fopen( SOURCE_FILE, "rb" )
         if (fp) {
@@ -97,13 +94,13 @@ int main()
                 }
                 fclose(fp);
 #if defined(__MICROLIB) && defined(__ARMCC_VERSION) // with microlib and ARM compiler
+#warning "free(fp)"
                 free(fp);
 #endif
             }
         }
 
 
-        usb_local->lock(false);
         USBStorage2* _usb = usb_local->getUsb();
         USB_HID* _hid = _usb->getHID();
         HID_REPORT recv_report;
@@ -113,7 +110,8 @@ int main()
             send_report.length = 64;
             _usb->send(&send_report);
         }
-        wait_ms(100*5);
+        usb_local->lock(false);
+        wait_ms(1000*5);
     }
 }
 
@@ -129,7 +127,8 @@ int file_size( FILE *fp )
 }
 
 
-void flash_write (int addr, char *buf, int len) {
+void flash_write (int addr, char *buf, int len)
+{
     int i;
     memory.BufferWrite(WRITE_BUFFER, addr % PAGE_SIZE);
     for (i = 0; i < len; i ++) {
@@ -138,7 +137,8 @@ void flash_write (int addr, char *buf, int len) {
     memory.BufferToPage(WRITE_BUFFER, addr / PAGE_SIZE, 1);
 }
 
-void flash_read (int addr, char *buf, int len) {
+void flash_read (int addr, char *buf, int len)
+{
     int i;
     memory.PageToBuffer(addr / PAGE_SIZE, READ_BUFFER);
     memory.BufferRead(READ_BUFFER, addr % PAGE_SIZE, 1);
