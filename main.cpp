@@ -22,15 +22,29 @@
 #define     LOADER_FILE         "/local/loader.bin"
 #define     TARGET_FILE         "/local/target.bin"
 
+#if defined(TARGET_LPC1768)
+//SWD swd(p25,p24,p23); // SWDIO,SWCLK,nRESET
+SWD swd(p24, p23, p22); // SWDIO,SWCLK,nRESET
+DigitalOut connected(LED1);
+DigitalOut running(LED4);
+
+SWSPI spi(p5, p7, p6); // mosi, miso, sclk
+
+ATD45DB161D memory(spi, p8);
+RawSerial ble(p5, p6);
+DA14580 BLE(ble, p26);
+
+#elif defined(TARGET_LPC11U35_501)
 //SWD swd(p25,p24,p23); // SWDIO,SWCLK,nRESET
 SWD swd(P0_5,P0_4,P0_21); // SWDIO,SWCLK,nRESET
 DigitalOut connected(P0_20);
 DigitalOut running(P0_2);
 
-SPI spi(P0_9,P0_8,P0_10); // mosi, miso, sclk
+SWSPI spi(P0_9,P0_8,P0_10); // mosi, miso, sclk
 ATD45DB161D memory(spi, P0_7);
 RawSerial ble(P0_19,P0_18);
 DA14580 BLE(ble, P0_1);
+#endif
 
 int file_size( FILE *fp );
 void flash_write (int addr, char *buf, int len);
@@ -57,7 +71,8 @@ public:
 
 int main()
 {
-    USBLocalFileSystem* usb_local = new USBLocalFileSystem(P0_9, P0_8, P0_10, P0_7,"local"); // RamDisk(64KB)
+//    USBLocalFileSystem* usb_local = new USBLocalFileSystem(P0_9, P0_8, P0_10, P0_7,"local"); // RamDisk(64KB)
+    USBLocalFileSystem* usb_local = new USBLocalFileSystem(p17, p15, p16, p18,"local"); // SD
 //    USBLocalFileSystem* usb_local = new USBLocalFileSystem(P0_14, P0_15, P0_16, P0_32,"local"); // SD
     usb_local->lock(true);
     myDAP* dap = new myDAP(&swd);
@@ -76,15 +91,11 @@ int main()
         usb_local->remount();
         char filename[32];
 
+        usb_local->puts("Try BLE.load(): ");
         result = BLE.load();
         usb_local->putc(result);
-        /*
-        fp = fopen( SOURCE_FILE, "rb" )
-        if (fp) {
-            filesize=file_size(fp);
-            pc.printf("0x%04X\n\r",filesize);
-        }
-        */
+        usb_local->puts("\n\r");
+
         if (usb_local->find(filename, sizeof(filename), "*.TXT")) {
             fp = fopen(filename, "r");
             if (fp) {
@@ -99,7 +110,6 @@ int main()
 #endif
             }
         }
-
 
         USBStorage2* _usb = usb_local->getUsb();
         USB_HID* _hid = _usb->getHID();
