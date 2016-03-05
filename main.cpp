@@ -6,6 +6,7 @@
 #include "DA14580.h"
 #include "W25X40BV.h"
 #include "loader.h"
+#include "mystorage.h"
 /**
 - UART -
 TX = P0_19
@@ -70,7 +71,7 @@ InterruptIn BL(P1_19);
 volatile bool isISP = false;
 void BL_int();
 
-W25X40BV memory(P0_15, P0_13, P0_14, P0_16); // mosi, miso, sclk, cs
+//W25X40BV memory(P0_15, P0_13, P0_14, P0_16); // mosi, miso, sclk, cs
 uint8_t Headerbuffer[8]={0x70,0x50,0x00,0x00,0x00,0x00,0x00,0x00};
 /*
 header[0] | 0x70 | 'p'
@@ -106,11 +107,12 @@ public:
 };
 */
 
-MyStorage flash(P0_15, P0_13, P0_14, P0_16);
+MyStorage flash(P0_8, P0_10, P0_9, P0_7);
+USBLocalFileSystem usb_local(&flash, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
 int main()
 {
 //    USBLocalFileSystem* usb_local = new USBLocalFileSystem(P0_8, P0_10, P0_9, P0_7, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
-    USBLocalFileSystem* usb_local = new USBLocalFileSystem(&flash, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
+//    USBLocalFileSystem* usb_local = new USBLocalFileSystem(&flash, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
     running.write(1);
     BL.mode(PullUp);
     char hex[]="0123456789ABCDEF"; //DEBUG
@@ -152,7 +154,14 @@ int main()
 */
 
     bool _hidresult;
-
+    usb_local.lock(false);
+    while(1) {
+        running.write(1);
+        wait_ms(1000);
+        running.write(0);
+        wait_ms(1000);
+    }
+/*
     while(1) {
         usb_local->lock(true);
         usb_local->remount();
@@ -177,6 +186,7 @@ int main()
                 usb_local->putc('.');
             }
         }
+*/
         /*
         usb_local->puts("loadersize: ");
         read= 0x0f& (loadersize>>12);
@@ -222,10 +232,12 @@ int main()
             usb_local->puts("F\n\r");
         }
 */
+/*
         usb_local->lock(false);
         connected = 0;
         wait_ms(1000);
     }
+*/
 }
 
 int file_size( FILE *fp )
