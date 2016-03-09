@@ -12,9 +12,21 @@ class MyStorage : public StorageInterface {
 public:
     MyStorage(PinName mosi, PinName miso, PinName sclk, PinName cs);
 
+    /** read 512bytes from memory;
+    @param data
+    @param block numbered from 0
+    */
     virtual int storage_read(uint8_t* data, uint32_t block);
+    /** write 512bytes to memory;
+    @param data
+    @param block numbered from 0
+    */
     virtual int storage_write(const uint8_t* data, uint32_t block);
+    /** returns number of 512byte sectors in storage;
+    */
     virtual uint32_t storage_sectors();
+    /** returns size of storage in bytes;
+    */
     virtual uint32_t storage_size();
 
 private:

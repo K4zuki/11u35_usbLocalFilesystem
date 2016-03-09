@@ -119,14 +119,10 @@ int main()
 
 //    usb_local->lock(true);
 
-//    uint8_t recieve;
-//    uint8_t read=0;
     int read = 0;
     int loadersize = sizeof(loader)/sizeof(loader[0]);
     int targetsize = 0;
     FILE* fp;
-//    BLE.baud(57600);
-//    int crc=0x00;
 
 //    myDAP* dap = new myDAP(&swd);
 
@@ -134,33 +130,27 @@ int main()
     BL.mode(PullUp);
     BL.fall(&BL_int);
 
-/*
-    fp = fopen(LOADER_FILE, "rb");
-    loadersize = file_size(fp);
-    fclose(fp);
-#if defined(__MICROLIB) && defined(__ARMCC_VERSION) // with microlib and ARM compiler
-#warning "free(fp)"
-    free(fp);
-#endif
-*/
-/*
-    fp = fopen(TARGET_FILE, "rb");
-    targetsize = file_size(fp);
-    fclose(fp);
-#if defined(__MICROLIB) && defined(__ARMCC_VERSION) // with microlib and ARM compiler
-#warning "free(fp)"
-    free(fp);
-#endif
-*/
-
     bool _hidresult;
     usb_local.lock(false);
+//    usb_local->lock(false);
     while(1) {
         running.write(1);
         wait_ms(1000);
         running.write(0);
         wait_ms(1000);
     }
+    /*
+    usb_local->puts("loadersize: ");
+    read= 0x0f& (loadersize>>12);
+    usb_local->putc(hex[read]);
+    read= 0x0f& (loadersize>>8);
+    usb_local->putc(hex[read]);
+    read= 0x0f& (loadersize>>4);
+    usb_local->putc(hex[read]);
+    read= 0x0f& (loadersize);
+    usb_local->putc(hex[read]);
+    usb_local->puts("\n\r");
+    */
 /*
     while(1) {
         usb_local->lock(true);
@@ -187,34 +177,6 @@ int main()
             }
         }
 */
-        /*
-        usb_local->puts("loadersize: ");
-        read= 0x0f& (loadersize>>12);
-        usb_local->putc(hex[read]);
-        read= 0x0f& (loadersize>>8);
-        usb_local->putc(hex[read]);
-        read= 0x0f& (loadersize>>4);
-        usb_local->putc(hex[read]);
-        read= 0x0f& (loadersize);
-        usb_local->putc(hex[read]);
-        usb_local->puts("\n\r");
-        */
-        /*
-                if (usb_local->find(filename, sizeof(filename), "*.TXT")) {
-                    fp = fopen(filename, "r");
-                    if (fp) {
-                        int c;
-                        while((c = fgetc(fp)) != EOF) {
-                            usb_local->putc(c);
-                        }
-                        fclose(fp);
-        #if defined(__MICROLIB) && defined(__ARMCC_VERSION) // with microlib and ARM compiler
-        #warning "free(fp)"
-                        free(fp);
-        #endif
-                    }
-                }
-        */
 
 //        USBStorage2* _usb = usb_local->getUsb();
 /*

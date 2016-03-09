@@ -14,7 +14,7 @@ int MyStorage::storage_read(uint8_t *buffer, uint32_t block_number) {
     // receive the data
 //    _read(buffer, 512);
 //    _flash.readStream(uint32_t addr, uint8_t* buf, uint32_t count);
-    _flash.readStream(256 * (block_number * 2), buffer, 512);
+    _flash.readStream(256 * ((block_number) * 2), buffer, 512);
     return 0;
 }
 
@@ -26,22 +26,22 @@ int MyStorage::storage_write(const uint8_t *buffer, uint32_t block_number) {
 //    _write(buffer, 512);
 //    writeStream(uint32_t addr, uint8_t* buf, uint32_t count);
 //    void pageErase(uint8_t page);
-    _flash.pageErase(block_number * 2);
-    _flash.pageErase(block_number * 2 + 1);
-    _flash.writeStream(256 * (block_number * 2), (uint8_t*)buffer, 256);
-    _flash.writeStream(256 * (block_number * 2 + 1), (uint8_t*)(buffer + 256), 256);
+    _flash.pageErase((block_number) * 2);
+    _flash.pageErase((block_number) * 2 + 1);
+    _flash.writeStream(512 * (block_number), (uint8_t*)buffer, 256);
+    _flash.writeStream(512 * (block_number) + 256, (uint8_t*)(buffer + 256), 256);
     return 0;
 }
 
 // virtual uint32_t storage_sectors();
 uint32_t MyStorage::storage_sectors() { 
     report_sectors_count++;
-    return (128); //256*512
+    return (256); //256*512
 }
 
 // virtual uint32_t storage_size();
 uint32_t MyStorage::storage_size()
 {
     report_size_count++;
-    return (128*512); //256*512
+    return (256*512); //256*512
 }
