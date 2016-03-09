@@ -62,7 +62,7 @@ YELLOW = P0_2
 #undef      TARGET_FILE
 #define     TARGET_FILE         "/local/target.bin"
 
-//SWD swd(P0_4, P0_5, P0_21); // SWDIO,SWCLK,nRESET
+SWD swd(P0_4, P0_5, P0_21); // SWDIO,SWCLK,nRESET
 
 DigitalOut connected(P0_20);
 DigitalOut running(P0_2);
@@ -71,8 +71,8 @@ InterruptIn BL(P1_19);
 volatile bool isISP = false;
 void BL_int();
 
-//W25X40BV memory(P0_15, P0_13, P0_14, P0_16); // mosi, miso, sclk, cs
-uint8_t Headerbuffer[8]={0x70,0x50,0x00,0x00,0x00,0x00,0x00,0x00};
+W25X40BV memory(P0_15, P0_13, P0_14, P0_16); // mosi, miso, sclk, cs
+uint8_t Headerbuffer[8]= {0x70,0x50,0x00,0x00,0x00,0x00,0x00,0x00};
 /*
 header[0] | 0x70 | 'p'
 header[1] | 0x50 | 'P'
@@ -87,7 +87,6 @@ DA14580 BLE(P0_19, P0_18, P0_21); // TX, RX, RESET
 
 int file_size( FILE *fp );
 
-/*
 class myDAP : public BaseDAP
 {
 public:
@@ -105,60 +104,49 @@ public:
         }
     }
 };
-*/
 
 MyStorage flash(P0_8, P0_10, P0_9, P0_7);
-USBLocalFileSystem usb_local(&flash, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
+//MyStorage flash(P0_15, P0_13, P0_14, P0_16);
 int main()
 {
+    USBLocalFileSystem* usb_local = new USBLocalFileSystem(&flash, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
+    USB_HID* _hid = usb_local->getUsb()->getHID();
+    HID_REPORT recv_report;
+    HID_REPORT send_report;
+    myDAP* dap = new myDAP(&swd);
+
 //    USBLocalFileSystem* usb_local = new USBLocalFileSystem(P0_8, P0_10, P0_9, P0_7, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
 //    USBLocalFileSystem* usb_local = new USBLocalFileSystem(&flash, "local"); //PinName mosi, PinName miso, PinName sclk, PinName cs, const char* name
     running.write(1);
     BL.mode(PullUp);
     char hex[]="0123456789ABCDEF"; //DEBUG
 
-//    usb_local->lock(true);
-
     int read = 0;
     int loadersize = sizeof(loader)/sizeof(loader[0]);
-    int targetsize = 0;
-    FILE* fp;
-
-//    myDAP* dap = new myDAP(&swd);
-
-    int result=0;
+    int result = 0;
     BL.mode(PullUp);
     BL.fall(&BL_int);
 
     bool _hidresult;
-    usb_local.lock(false);
-//    usb_local->lock(false);
-    while(1) {
-        running.write(1);
-        wait_ms(1000);
-        running.write(0);
-        wait_ms(1000);
-    }
-    /*
-    usb_local->puts("loadersize: ");
-    read= 0x0f& (loadersize>>12);
-    usb_local->putc(hex[read]);
-    read= 0x0f& (loadersize>>8);
-    usb_local->putc(hex[read]);
-    read= 0x0f& (loadersize>>4);
-    usb_local->putc(hex[read]);
-    read= 0x0f& (loadersize);
-    usb_local->putc(hex[read]);
-    usb_local->puts("\n\r");
-    */
-/*
+    usb_local->lock(false);
     while(1) {
         usb_local->lock(true);
         usb_local->remount();
         connected.write(1);
-        char filename[32];
 
         if(isISP) {
+            /*
+            usb_local->puts("loadersize: ");
+            read= 0x0f& (loadersize>>12);
+            usb_local->putc(hex[read]);
+            read= 0x0f& (loadersize>>8);
+            usb_local->putc(hex[read]);
+            read= 0x0f& (loadersize>>4);
+            usb_local->putc(hex[read]);
+            read= 0x0f& (loadersize);
+            usb_local->putc(hex[read]);
+            usb_local->puts("\n\r");
+            */
             usb_local->puts("\n\r");
             usb_local->puts("Writing "TARGET_FILE" into SPI flash");
             usb_local->puts("\n\r");
@@ -167,39 +155,27 @@ int main()
             result = BLE.load();
             running.write(1);
             usb_local->putc(result);
+            usb_local->putc(0x07);
             usb_local->puts("\n\r");
             isISP = false;
-        } else {
-            if(BLE._ble.readable()){
+            while(BLE._ble.readable()) {
                 usb_local->putc(BLE._ble.getc());
-            }else{
-                usb_local->putc('.');
             }
+        } else {
+            usb_local->putc('.');
         }
-*/
 
-//        USBStorage2* _usb = usb_local->getUsb();
-/*
-        HID_REPORT recv_report;
+        usb_local->lock(false);
 
-        USB_HID* _hid = usb_local->getUsb()->getHID();
         _hidresult = _hid->readNB(&recv_report);
         if( _hidresult ) {
-            HID_REPORT send_report;
-            usb_local->puts("T\n\r");
             dap->Command(recv_report.data, send_report.data);
             send_report.length = 64;
             _hid->send(&send_report);
-        } else {
-            usb_local->puts("F\n\r");
         }
-*/
-/*
-        usb_local->lock(false);
         connected = 0;
-        wait_ms(1000);
+        wait_ms(1);
     }
-*/
 }
 
 int file_size( FILE *fp )
