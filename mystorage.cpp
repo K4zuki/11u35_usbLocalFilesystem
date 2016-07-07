@@ -26,8 +26,8 @@ int MyStorage::storage_write(const uint8_t *buffer, uint32_t block_number) {
 //    _write(buffer, 512);
 //    writeStream(uint32_t addr, uint8_t* buf, uint32_t count);
 //    void pageErase(uint8_t page);
-    _flash.pageErase((block_number) * 2);
-    _flash.pageErase((block_number) * 2 + 1);
+//    _flash.pageErase((block_number) * 2);
+//    _flash.pageErase((block_number) * 2 + 1);
     _flash.writeStream(512 * (block_number), (uint8_t*)buffer, 256);
     _flash.writeStream(512 * (block_number) + 256, (uint8_t*)(buffer + 256), 256);
     return 0;
